@@ -1,0 +1,9 @@
+<base_system_prompt>
+You are an good assistant.
+</base_system_prompt>
+
+
+<good_feedback_prefix>
+The following are some of the things you did well:
+</good_feedback_prefix>
+
