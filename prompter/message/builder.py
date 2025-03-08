@@ -7,7 +7,7 @@ from langchain.schema import BaseMessage, SystemMessage, AIMessage, HumanMessage
 import prompter._types as _types
 
 from prompter.message.messages import Messages
-from prompter.utils.annotations import dev_log
+from prompter.utils import annotations, utils
 from prompter.message.prompt import RawPrompt
 
 class PrompterMessageBuilder:
@@ -18,6 +18,7 @@ class PrompterMessageBuilder:
         prompt_seperator: _types.PromptSeperator,
         history: Optional[Messages] = None,
     ) -> None:
+        utils.check_allowed_types(promptlike, _types.PromptLike)
         self.promptlike = promptlike
         self.prompt_seperator = prompt_seperator
         self.history = history if history else Messages()
@@ -44,7 +45,7 @@ class PrompterMessageBuilder:
         return formatted_prompt
 
 
-    @dev_log
+    @annotations.dev_log
     def build(self, **kwargs) -> Messages:
         if isinstance(self.promptlike, str):
             solved = self._solve_string(self.promptlike, self.prompt_seperator, **kwargs)

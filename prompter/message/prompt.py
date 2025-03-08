@@ -16,6 +16,7 @@ class RawPrompt(BaseModel):
     def placeholders(self) -> dict[str, List[str]]:
         """ Returns the placeholders in the system and user prompts """
         
+        seen_vars = set()
         system_var_it = (
             string.
             Formatter()
@@ -24,7 +25,10 @@ class RawPrompt(BaseModel):
         system_placholders = []
         for _, var, _, _ in system_var_it:
             if var:
+                if var in seen_vars:
+                    raise ValueError(f"Placeholder **{var}** is duplicated")
                 system_placholders.append(var)
+                seen_vars.add(var)
 
         user_var_it = (
             string.
@@ -34,10 +38,10 @@ class RawPrompt(BaseModel):
         user_placholders = []
         for _, var, _, _ in user_var_it:
             if var:
-                if var in system_placholders:
-                    raise ValueError(f"Placeholder **{var}** is already in system prompt")
-                
+                if var in seen_vars:
+                    raise ValueError(f"Placeholder **{var}** is duplicated")
                 user_placholders.append(var)
+                seen_vars.add(var)
 
         return {
             "system": system_placholders,
@@ -59,21 +63,6 @@ class RawPrompt(BaseModel):
                         formatted_user = self.user.format(**kwargs)
                 except KeyError as e:
                     logging.error(f"KeyError: {e}")
-                    raise KeyError(f"Placeholder **{var}** is unparameterized")
+                    raise KeyError(f"Placeholder **{e}** is unparameterized")
         
         return FormattedPrompt(system=formatted_system, user=formatted_user)
-
-
-
-
-
-
-(
-    RawPrompt(
-        system="{name1} 만 믿으라고!",
-        user="안녕하세요, {name2}님!"
-    )
-    .format_placeholders(name1="world", name2="홍길동")
-)
-
-

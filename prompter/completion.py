@@ -44,25 +44,38 @@ class OpenAICompletion(BaseCompletion):
     ) -> None:
         """ prompt can be beforeparametrized string, list of dictionaries or FormattedPrompt """
         super().__init__(comp_id, comp_type, comp_name)
+
         self._message_builder = PrompterMessageBuilder(
             prompt, 
             prompt_seperator,
             history
         )
 
-    def infer(self, **kwargs):
+        self.messages = None
+
+    def build_prompt(self, **kwargs):
         """OpenAI 모델을 사용한 동기 방식 추론"""
         messages = self._message_builder.build(**kwargs)
-        print(messages)
+        self.messages = messages
+
+        return self
+    
+    def infer(self, ):
+        """OpenAI 모델을 사용한 동기 방식 추론"""
+        
 
     async def ainfer(self):
         """OpenAI 모델을 사용한 비동기 방식 추론"""
 
 
 if __name__ == '__main__':
-    OpenAICompletion(
-        comp_id='1',
-        comp_type='openai',
-        comp_name='GPT-3',
-        prompt=[{'role': 'system', 'content': 'Hello, my name is.'}, {'role': 'user', 'content': 'gogo {gogo} sgaga {sgaga}'}],
-    ).infer(name="gogo", gogo="gogo", sgaga="sgaga")
+    (
+        OpenAICompletion(
+            comp_id='1',
+            comp_type='openai',
+            comp_name='GPT-3',
+            prompt=[{'role': 'system', 'content': 'Hello, my name is. {a1}'}, {'role': 'user', 'content': 'gogo {a2} sgaga {a3}'}],
+        )
+        .build_prompt(a1="gogo", a2="gogo")
+        .infer()
+    )
