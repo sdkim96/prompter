@@ -14,6 +14,7 @@ class PrompterMessageBuilder:
 
     def __init__(
         self,
+        *,
         promptlike: _types.PromptLike,
         prompt_seperator: _types.PromptSeperator,
         history: Optional[Messages] = None,

@@ -5,6 +5,7 @@ import prompter._types as _types
 
 from prompter.message.builder import PrompterMessageBuilder
 from prompter.message.messages import Messages
+from prompter.provider._openai import OpenAIClientWrapper
 
 
 class BaseCompletion(abc.ABC):
@@ -41,27 +42,42 @@ class OpenAICompletion(BaseCompletion):
         prompt: _types.PromptLike,
         prompt_seperator: _types.PromptSeperator = '[user]',
         history: Optional[Messages] = None,
+        stream_mode: bool = False,
+        async_mode: bool = False,
     ) -> None:
         """ prompt can be beforeparametrized string, list of dictionaries or FormattedPrompt """
         super().__init__(comp_id, comp_type, comp_name)
 
+        self.stream_mode = stream_mode
+        self.async_mode = async_mode
+
+        # private
         self._message_builder = PrompterMessageBuilder(
-            prompt, 
-            prompt_seperator,
-            history
+            promptlike=prompt, 
+            prompt_seperator=prompt_seperator,
+            history=history
         )
 
-        self.messages = None
+        self._messages = None
+        self._client= OpenAIClientWrapper(stream_mode=self.stream_mode, async_mode=self.async_mode)
 
+    @property
+    def ready_to_infer(self):
+        return self._messages is not None
+    
     def build_prompt(self, **kwargs):
         """OpenAI 모델을 사용한 동기 방식 추론"""
         messages = self._message_builder.build(**kwargs)
-        self.messages = messages
+        self._messages = messages
 
         return self
     
     def infer(self, ):
         """OpenAI 모델을 사용한 동기 방식 추론"""
+        if not self.ready_to_infer:
+            raise ValueError('You must build prompt before infer')
+
+        return self._client(self._messages) # type: ignore
         
 
     async def ainfer(self):
