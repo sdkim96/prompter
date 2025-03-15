@@ -5,7 +5,7 @@
             "name": "Python Debugger: Run Module",
             "type": "debugpy",
             "request": "launch",
-            "module": "prompter.provider.base",
+            "module": "tests.test_completion",
             "console": "integratedTerminal"
         }
     ]

@@ -1,11 +1,11 @@
 import abc
-from typing import Optional
+from typing import Optional, Literal
 
 import prompter._types as _types
 
 from prompter.message.builder import PrompterMessageBuilder
 from prompter.message.messages import Messages
-from prompter.provider._openai import OpenAIClientWrapper
+from prompter.client.llm_providers._openai import OpenAIClientWrapper
 
 
 class BaseCompletion(abc.ABC):
@@ -15,19 +15,16 @@ class BaseCompletion(abc.ABC):
         comp_id: str,
         comp_type: str,
         comp_name: str,
+        model: str,
     ) -> None:
         self.comp_id = comp_id
         self.comp_type = comp_type
         self.comp_name = comp_name
+        self.model = model
 
     @abc.abstractmethod
     def infer(self):
         """동기 방식 추론 메서드 (각 자식 클래스에서 반드시 구현해야 함)"""
-        pass
-
-    @abc.abstractmethod
-    async def ainfer(self):
-        """비동기 방식 추론 메서드 (각 자식 클래스에서 반드시 구현해야 함)"""
         pass
 
 
@@ -42,14 +39,13 @@ class OpenAICompletion(BaseCompletion):
         prompt: _types.PromptLike,
         prompt_seperator: _types.PromptSeperator = '[user]',
         history: Optional[Messages] = None,
+        model: Literal["gpt-4o", "gpt-4o-mini"] = "gpt-4o-mini",
         stream_mode: bool = False,
-        async_mode: bool = False,
     ) -> None:
         """ prompt can be beforeparametrized string, list of dictionaries or FormattedPrompt """
-        super().__init__(comp_id, comp_type, comp_name)
+        super().__init__(comp_id, comp_type, comp_name, model)
 
         self.stream_mode = stream_mode
-        self.async_mode = async_mode
 
         # private
         self._message_builder = PrompterMessageBuilder(
@@ -59,7 +55,10 @@ class OpenAICompletion(BaseCompletion):
         )
 
         self._messages = None
-        self._client= OpenAIClientWrapper(stream_mode=self.stream_mode, async_mode=self.async_mode)
+        self._client= OpenAIClientWrapper(
+            model=self.model,
+            stream_mode=self.stream_mode
+        )
 
     @property
     def ready_to_infer(self):
@@ -72,16 +71,15 @@ class OpenAICompletion(BaseCompletion):
 
         return self
     
-    def infer(self, ):
+    def infer(
+        self,
+        response_schema: type[_types.Jsonable] = str,
+    ):
         """OpenAI 모델을 사용한 동기 방식 추론"""
         if not self.ready_to_infer:
             raise ValueError('You must build prompt before infer')
 
-        return self._client(self._messages) # type: ignore
-        
-
-    async def ainfer(self):
-        """OpenAI 모델을 사용한 비동기 방식 추론"""
+        return self._client(self._messages, response_schema) # type: ignore
 
 
 if __name__ == '__main__':
