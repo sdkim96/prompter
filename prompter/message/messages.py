@@ -12,7 +12,7 @@ class Messages(deque[_types.Message]):  # 🔹 타입 명확히 지정
         result: List[dict[str, str]] = []
 
         for msg in self:
-            what_to_post = msg.to_json()['kwargs']
+            what_to_post = msg.to_json().get('kwargs', {})
             role = what_to_post.get('type', '') 
             content = what_to_post.get('content', '') 
 

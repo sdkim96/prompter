@@ -3,6 +3,7 @@ from typing import Optional, Literal
 
 import prompter._types as _types
 
+from prompter.store import BaseStore, InmemoryStore
 from prompter.message.builder import PrompterMessageBuilder
 from prompter.message.messages import Messages
 from prompter.client.llm_providers._openai import OpenAIClientWrapper
@@ -13,7 +14,7 @@ class BaseCompletion(abc.ABC):
     def __init__(
         self,
         comp_id: str,
-        comp_type: str,
+        comp_type: _types.CompletionType,
         comp_name: str,
         model: str,
     ) -> None:
@@ -34,18 +35,21 @@ class OpenAICompletion(BaseCompletion):
         self,
         *,
         comp_id: str,
-        comp_type: str,
+        comp_type: _types.CompletionType = "openai",
         comp_name: str,
         prompt: _types.PromptLike,
         prompt_seperator: _types.PromptSeperator = '[user]',
         history: Optional[Messages] = None,
         model: Literal["gpt-4o", "gpt-4o-mini"] = "gpt-4o-mini",
+        store: Optional[BaseStore] = None,
         stream_mode: bool = False,
     ) -> None:
         """ prompt can be beforeparametrized string, list of dictionaries or FormattedPrompt """
         super().__init__(comp_id, comp_type, comp_name, model)
 
         self.stream_mode = stream_mode
+        if store is None:
+            self.store = InmemoryStore()
 
         # private
         self._message_builder = PrompterMessageBuilder(
@@ -80,16 +84,3 @@ class OpenAICompletion(BaseCompletion):
             raise ValueError('You must build prompt before infer')
 
         return self._client(self._messages, response_schema) # type: ignore
-
-
-if __name__ == '__main__':
-    (
-        OpenAICompletion(
-            comp_id='1',
-            comp_type='openai',
-            comp_name='GPT-3',
-            prompt=[{'role': 'system', 'content': 'Hello, my name is. {a1}'}, {'role': 'user', 'content': 'gogo {a2} sgaga {a3}'}],
-        )
-        .build_prompt(a1="gogo", a2="gogo")
-        .infer()
-    )

@@ -22,6 +22,8 @@ Jsonable = Union[
     BaseModel,
 ]
 
+CompletionType = Literal['openai']
+
 Message = Union[
     HumanMessage, SystemMessage, AIMessage
 ]
