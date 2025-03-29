@@ -37,19 +37,25 @@ class OpenAICompletion(BaseCompletion):
         comp_id: str,
         comp_type: _types.CompletionType = "openai",
         comp_name: str,
+        user_name: str,
         prompt: _types.PromptLike,
         prompt_seperator: _types.PromptSeperator = '[user]',
-        history: Optional[Messages] = None,
         model: Literal["gpt-4o", "gpt-4o-mini"] = "gpt-4o-mini",
         store: Optional[BaseStore] = None,
         stream_mode: bool = False,
+        use_multi_turn: bool = False,
     ) -> None:
         """ prompt can be beforeparametrized string, list of dictionaries or FormattedPrompt """
         super().__init__(comp_id, comp_type, comp_name, model)
 
         self.stream_mode = stream_mode
-        if store is None:
-            self.store = InmemoryStore()
+        if use_multi_turn:
+            if store is None:
+                self.store = InmemoryStore()
+
+            self.store.get_history(
+                comp_id=comp_id
+            )
 
         # private
         self._message_builder = PrompterMessageBuilder(

@@ -1,11 +1,11 @@
 import uuid
 from prompter.store.base import BaseStore
-from typing import List, Literal, Generic, TypeVar
+from typing import Optional, Literal, Generic, TypeVar, List
 from pydantic import BaseModel, Field
 
 ResponseT = TypeVar('ResponseT', str, BaseModel)
 
-class FewShots(BaseModel, Generic[ResponseT]):
+class FewShot(BaseModel, Generic[ResponseT]):
     human_prompt: str
     response_example: ResponseT
 
@@ -25,14 +25,21 @@ class LLMModel(BaseModel):
 class ResponseSchemaExample(BaseModel):
     summary: str
 
+class SystemPrompt(BaseModel):
+    persona: str
+    tone: str
+    goal: str
+    restrictions: str
+
+
 class Prompt(BaseModel, Generic[ResponseT]):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()) + '_prompt')
     name: str = Field(default='name of prompt')
     description: str = Field(default='description of prompt')
     version: int = Field(default=1)
     model: LLMModel
-    few_shots: FewShots[ResponseT]
-    system_prompt: str
+    few_shots: Optional[List[FewShot[ResponseT]]] = Field(default=None)
+    system_prompt: str = Field(default="You are a good assistant.")
     human_prompt: str
     response_schema: type[ResponseT]
 
@@ -53,12 +60,14 @@ p = Prompt(
             top_p=0.9
         )
     ),
-    few_shots=FewShots(
-        human_prompt='Write a summary of the article.',
-        response_example=ResponseSchemaExample(
-            summary='The article is about the benefits of eating healthy.'
+    few_shots=[
+        FewShot(
+            human_prompt='Write a summary of the article.',
+            response_example=ResponseSchemaExample(
+                summary='The article is about the benefits of eating healthy.'
+            )
         )
-    ),
+    ],
     system_prompt='Write a summary of the article.',
     human_prompt='The article is about the benefits of eating healthy.',
     response_schema=ResponseSchemaExample
